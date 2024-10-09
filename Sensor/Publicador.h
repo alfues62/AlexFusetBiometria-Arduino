@@ -13,15 +13,15 @@ class Publicador {
 private:
 
   uint8_t beaconUUID[16] = { 
-	'S', 'E', 'N', 'S', 'O', 'R', '-', 'D', 
-	'E', '-', 'M', 'I', 'E', 'R', 'D', 'A'
+	'S', 'E', 'N', 'S', 'O', 'R', '-', 'B', 
+	'I', 'O', 'M', 'E', 'T', 'R', 'I', 'A'
 	};
 
   // ............................................................
   // ............................................................
 public:
   EmisoraBLE laEmisora {
-	"Sensor de Mierda", //  nombre emisora//oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+	"SensorBiometria", //  nombre emisora//oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 	  0x004c, // fabricanteID (Apple)
 	  4 // txPower
 	  };
