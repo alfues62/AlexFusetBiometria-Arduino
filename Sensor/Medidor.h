@@ -1,4 +1,3 @@
-// -- mode: c++ --
 #ifndef MEDIDOR_H_INCLUIDO
 #define MEDIDOR_H_INCLUIDO
 
@@ -11,112 +10,107 @@ class Medidor {
   // .....................................................
 
   // Definición de pines utilizados para conexiones de sensores.
-  private:
-    int pinVGas = 2;     // Pin para el sensor de ozono
-    int pinVRef = 29;    // Pin para la referencia
-    int pinVTemp = 28;   // Pin para el sensor de temperatura
+private:
+  int pinVGas = 2;    // Pin para el sensor de ozono
+  int pinVRef = 29;   // Pin para la referencia
+  int pinVTemp = 28;  // Pin para el sensor de temperatura
+  double ppmOzono;
 
   // Variables públicas para almacenar los valores medidos.
-  public:
-    float VeGas;        // Tensión del sensor de ozono
-    float VeRef;        // Tensión de referencia
-    float VeTemp;       // Tensión del sensor de temperatura
+public:
+  float vgas;    // Tensión del sensor de ozono
+  float vref;    // Tensión de referencia
+  float VeTemp;  // Tensión del sensor de temperatura
 
-    float aGas;         // Valor analógico del sensor de ozono
-    float aRef;         // Valor analógico de referencia
-    float aTemp;        // Valor analógico del sensor de temperatura
+  float aGas;   // Valor analógico del sensor de ozono
+  float aRef;   // Valor analógico de referencia
+  float aTemp;  // Valor analógico del sensor de temperatura
 
-    float Temp;         // Temperatura medida
-    float Vmedida;      // Tensión medida
-    float Cx;           // Concentración de ozono
-    float Itemp;        // Variación de temperatura
-    float fCx;          // Concentración ajustada de ozono
+  float Temp;     // Temperatura medida
+  float Vmedida;  // Tensión medida
+  float Cx;       // Concentración de ozono
+  float Itemp;    // Variación de temperatura
+  float fCx;      // Concentración ajustada de ozono
 
-  // .....................................................
-  // Constructor
-  // .....................................................
-  Medidor( ) {
+  // Constructor que inicializa los pines
+  Medidor() {
     pinMode(pinVGas, INPUT);
     pinMode(pinVRef, INPUT);
     pinMode(pinVTemp, INPUT);
-  } // ()
+  }  // ()
+
+  float digToVolt(int Vin) {
+    return ((Vin * 3.3) / 1024);
+  }
+
+  // Función para realizar una calibración lineal
+  double calibrarLectura(double valorMedido, double &m) {
+    m = 0.3;                                      // Pendiente de la recta, ajustar según sea necesario
+    const double b = -1.5;                        // Intersección de la recta, ajustar según sea necesario
+    double valorCalibrado = m * valorMedido + b;  // Calcula el valor calibrado
+
+    return valorCalibrado > 0 ? valorCalibrado : 0;
+  }
 
   // .....................................................
   // Método para realizar inicializaciones necesarias.
-  // .....................................................
   void iniciarMedidor() {
-    // Realizar configuraciones o inicializaciones adicionales si es necesario.
-  } // ()
+    vgas = 0;
+    vref = 0;
+    ppmOzono = 0;
+    pinMode(pinVRef, INPUT);  // Uso correcto de pinVRef
+    pinMode(pinVGas, INPUT);  // Uso correcto de pinVGas
+  }  // ()
 
-  // .....................................................
-  // Método para medir la concentración de ozono.
   // .....................................................
   // Método para medir la concentración de ozono.
   int medirCO2() {
-      // Leer los valores analógicos de los sensores múltiples veces y promediar
-      int numLecturas = 10; // Número de lecturas para promediar
-      float sumaGas = 0, sumaRef = 0, sumaTemp = 0;
+    // Lee el valor de los pines del sensor
+    int Agas = analogRead(pinVGas);  // Uso correcto de pinVGas
+    int Aref = analogRead(pinVRef);  // Uso correcto de pinVRef
 
-      for (int i = 0; i < numLecturas; i++) {
-          sumaGas += analogRead(pinVGas);
-          sumaRef += analogRead(pinVRef);
-          sumaTemp += analogRead(pinVTemp);
-          delay(10); // Breve espera para evitar lecturas demasiado rápidas
-      }
+    // Convierte el valor digital a voltios
+    vgas = digToVolt(Agas);
+    vref = digToVolt(Aref);
 
-      // Promediar las lecturas
-      aGas = sumaGas / numLecturas;
-      aRef = sumaRef / numLecturas;
-      aTemp = sumaTemp / numLecturas;
+    // Constante de conversión basada en la especificación del sensor
+    const double M = -41.96 * 499 * (0.000001);
 
-      Serial.print("GAS: ");
-      Serial.println(aGas);
-      Serial.print("REF: ");
-      Serial.println(aRef);
-      Serial.print("TEM: ");
-      Serial.println(aTemp);
+    // Calcula las ppm de ozono
+    double res = ((1 / M) * (vgas - vref));
+    ppmOzono = res > 0 ? res : 0;
 
-      // Convertir los valores analógicos en tensiones (0-3.3V)
-      VeGas = (aGas / 4096) * 3.3;
-      VeRef = (aRef / 4096) * 3.3;
-      VeTemp = (aTemp / 4096) * 3.3;
+    // Almacenar el valor de la pendiente
+    double m;
 
-      // Calcular la tensión medida
-      Vmedida = VeGas - VeRef;
+    // Aplicamos la calibración lineal al valor de ppmOzono
+    double ppmCalibrado = calibrarLectura(ppmOzono, m);
 
-      // Calcular la concentración de ozono (Cx) utilizando una fórmula específica.
-      Cx = (Vmedida) / (42.31 * 499 * 0.000001);
+    // Calcular el valor de ppmOzono * 10
+    int ppm10 = (int)(ppmOzono * 10);
 
-      // Calcular la variación de temperatura (Itemp) en relación a 20°C
-      Temp = 87 * VeTemp - 18;
-      Itemp = Temp - 20;
+    // Imprimir valores de referencia, gas leídos, m, ppmOzono * 10 y el valor calibrado
+    Serial.print("VGAS: ");
+    Serial.println(vgas);
+    Serial.print("VREF: ");
+    Serial.println(vref);
+    Serial.print("M: ");
+    Serial.println(M);  // Mostrar el valor de M
+    Serial.print("PPM Ozono * 10: ");
+    Serial.println(ppm10);  // Mostrar el valor de ppmOzono * 10
+    Serial.print("PPM Ozono (calibrado): ");
+    Serial.println(ppmCalibrado);  // Mostrar solo el valor calibrado
 
-      // Inicializar Cx final con el valor de Cx
-      fCx = Cx;
-
-      // Ajustar la concentración de ozono en función de la temperatura.
-      if (Itemp > 20) {
-          fCx = Cx - ((Itemp - 20) * 0.03 * Cx); // Ajustar proporcionalmente
-      } else {
-          fCx = Cx + ((20 - Itemp) * 0.03 * Cx); // Ajustar proporcionalmente
-      }
-
-      // Devolver el valor ajustado de la concentración de ozono (fCx).
-      Serial.println(fCx);
-      return fCx;
+    return ppmCalibrado;  // Devuelve el valor calibrado
   }
 
+  // .....................................................
+  // Método para medir la temperatura.
+  int medirTemperatura() {
+    return Temp * 100;
+  }  // ()
 
-    // .....................................................
-    // Método para medir la temperatura.
-    // .....................................................
-    int medirTemperatura() {
-
-    return Temp*100;
-  } // ()
-
-}; // class
-
+};  // class
 
 // ------------------------------------------------------
 // ------------------------------------------------------
