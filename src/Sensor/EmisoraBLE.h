@@ -1,4 +1,3 @@
-//Pablo Chova Aparisi
 // --------------------------------------------------------------
 #ifndef EMISORA_H_INCLUIDO
 #define EMISORA_H_INCLUIDO

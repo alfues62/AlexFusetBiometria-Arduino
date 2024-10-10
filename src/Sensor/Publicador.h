@@ -1,6 +1,4 @@
 // --------------------------------------------------------------
-
-//Pablo Chova Aparisi
 #ifndef PUBLICADOR_H_INCLUIDO
 #define PUBLICADOR_H_INCLUIDO
 
@@ -21,7 +19,7 @@ private:
   // ............................................................
 public:
   EmisoraBLE laEmisora {
-	"SensorBiometria", //  nombre emisora//oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+	"SensorBiometria", //  nombre emisora <-----
 	  0x004c, // fabricanteID (Apple)
 	  4 // txPower
 	  };

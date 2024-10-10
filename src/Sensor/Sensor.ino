@@ -1,173 +1,136 @@
-
-// --------------------------------------------------------------
-//Archivo .ino, encargado del funcionamiento del proyecto, al abrir puerto serie empieza la transmisión de beacons
-// --------------------------------------------------------------
 #include <bluefruit.h>
 
-#undef min // 
-#undef max //
-// --------------------------------------------------------------
-// --------------------------------------------------------------
-#include "LED.h"
-#include "PuertoSerie.h"
+#undef min
+#undef max 
 
 // --------------------------------------------------------------
+// Inclusión de cabeceras necesarias para el proyecto
+// --------------------------------------------------------------
+#include "LED.h"          
+#include "PuertoSerie.h" 
+
+// --------------------------------------------------------------
+// Espacio de nombres Globales para variables y objetos compartidos
 // --------------------------------------------------------------
 namespace Globales {
-  
-  LED elLED ( /* NUMERO DEL PIN LED = */ 7 );
 
-  PuertoSerie elPuerto ( /* velocidad = */ 115200 ); // 115200 o 9600 o ...
+LED elLED(/* NUMERO DEL PIN LED = */ 7);  
 
-  // Serial1 en el ejemplo de Curro creo que es la conexión placa-sensor 
+PuertoSerie elPuerto(/* velocidad = */ 115200); 
+
 };
 
 // --------------------------------------------------------------
+// Inclusión de cabeceras adicionales
 // --------------------------------------------------------------
-#include "EmisoraBLE.h"
-#include "Publicador.h"
-#include "Medidor.h"
-
+#include "EmisoraBLE.h" 
+#include "Publicador.h"  
+#include "Medidor.h"     
 
 // --------------------------------------------------------------
+// Espacio de nombres Globales para otros objetos
 // --------------------------------------------------------------
 namespace Globales {
 
-  Publicador elPublicador;
+Publicador elPublicador;  
+Medidor elMedidor;        
 
-  Medidor elMedidor;
-
-}; // namespace
+};  // namespace Globales
 
 // --------------------------------------------------------------
-// setup()
+// Función setup()
+// Se ejecuta una vez al inicio del programa para inicializar el sistema.
 // --------------------------------------------------------------
 void setup() {
 
-  Globales::elPuerto.esperarDisponible();
+  Globales::elPuerto.esperarDisponible();  // Espera a que el puerto serie esté disponible
 
-  // 
-  // 
-  // 
-  //inicializarPlaquita();
+  // Inicialización de la plaquita, puede incluir más configuraciones necesarias.
+  // inicializarPlaquita(); // (descomentado si es necesario)
 
-  // Suspend Loop() to save power
-  // suspendLoop();
+  // Suspender el loop() para ahorrar energía (opcional)
+  // suspendLoop(); // (descomentado si es necesario)
 
-  // 
-  // 
-  // 
-  Globales::elPublicador.encenderEmisora();
+  Globales::elPublicador.encenderEmisora();  // Enciende la emisora para comenzar la transmisión
 
-  // Globales::elPublicador.laEmisora.pruebaEmision();
-  
-  // 
-  // 
-  // 
-  Globales::elMedidor.iniciarMedidor();
+  // Globales::elPublicador.laEmisora.pruebaEmision(); // (prueba de emisión opcional)
 
-  // 
-  // 
-  // 
-  esperar( 1000 );
+  Globales::elMedidor.iniciarMedidor();  // Inicializa el medidor para comenzar a recoger datos
 
-  Globales::elPuerto.escribir( "---- setup(): fin ---- \n " );
+  esperar(1000);  // Espera un segundo antes de continuar
 
-} // setup ()
+  Globales::elPuerto.escribir("---- setup(): fin ---- \n ");  // Mensaje de fin de configuración
+}  // fin de setup()
 
 // --------------------------------------------------------------
-// lucecitas()
-// sirve para comprobar que el programa está subido a la sparkfun 
+// Función lucecitas()
+// Sirve para comprobar que el programa está subido a la placa Sparkfun.
+// Realiza un parpadeo del LED para indicar que el sistema está activo.
 // --------------------------------------------------------------
 inline void lucecitas() {
   using namespace Globales;
 
-  elLED.brillar( 100 ); // 100 encendido
-  esperar ( 400 ); //  100 apagado
-  elLED.brillar( 100 ); // 100 encendido
-  esperar ( 400 ); //  100 apagado
-  Globales::elLED.brillar( 100 ); // 100 encendido
-  esperar ( 400 ); //  100 apagado
-  Globales::elLED.brillar( 1000 ); // 1000 encendido
-  esperar ( 1000 ); //  100 apagado
-} // ()
+  elLED.brillar(100);   // LED encendido (100%)
+  esperar(400);         // Espera 400 ms
+  elLED.brillar(0);     // LED apagado (0%)
+  esperar(400);         // Espera 400 ms
+  elLED.brillar(100);   // LED encendido (100%)
+  esperar(400);         // Espera 400 ms
+  elLED.brillar(0);     // LED apagado (0%)
+  esperar(400);         // Espera 400 ms
+  elLED.brillar(1000);  // LED encendido (1000%)
+  esperar(1000);        // Espera 1000 ms
+}  // fin de lucecitas()
 
 // --------------------------------------------------------------
-// loop ()
+// Función loop()
+// Se ejecuta continuamente después de setup().
+// Aquí se realizan las mediciones y se publica la información.
 // --------------------------------------------------------------
 namespace Loop {
-  uint8_t cont = 0;
+uint8_t cont = 0;  // Contador para llevar la cuenta de iteraciones
 };
 
 // ..............................................................
 // ..............................................................
-void loop () {
+void loop() {
 
-  using namespace Loop;
-  using namespace Globales;
+  using namespace Loop;      // Uso del espacio de nombres Loop
+  using namespace Globales;  // Uso del espacio de nombres Globales
 
-  cont++;
+  cont++;  // Incrementa el contador
 
-  elPuerto.escribir( "\n---- loop(): empieza " );
-  elPuerto.escribir( cont );
-  elPuerto.escribir( "\n" );
+  elPuerto.escribir("\n---- loop(): empieza ");  // Mensaje indicando el inicio del loop
+  elPuerto.escribir(cont);                       // Escribe el valor del contador en el puerto serie
+  elPuerto.escribir("\n");
 
+  lucecitas();  // Llama a la función para parpadear el LED
 
-  lucecitas();
-
-  // 
-  // mido y publico
-  // 
+  // Medición y publicación del valor de CO2
   int valorCO2 = elMedidor.medirCO2();
-  
-  elPublicador.publicarCO2( valorCO2,
-							cont,
-							1000 // intervalo de emisión
-							);
-  
-  // 
-  // mido y publico
-  // 
-  int valorTemperatura = elMedidor.medirTemperatura();
-  
-  //elPublicador.publicarTemperatura( valorTemperatura, 
-	//								cont,
-	//								1000 // intervalo de emisión
-	//								);
+  elPublicador.publicarCO2(valorCO2, cont, 1000);  
 
-  // 
-  // prueba para emitir un iBeacon y poner
-  // en la carga (21 bytes = uuid 16 major 2 minor 2 txPower 1 )
-  // lo que queramos (sin seguir dicho formato)
-  // 
-  // Al terminar la prueba hay que hacer Publicador::laEmisora privado
-  // 
+  // Medición y publicación de la temperatura
+  int valorTemperatura = elMedidor.medirTemperatura();  // Medir la temperatura
+  // elPublicador.publicarTemperatura( valorTemperatura, cont, 1000 ); // Publicar la temperatura
   /*
   char datos[21] = {
-	'H', 'o', 'l', 'a',
-	'H', 'o', 'l', 'a',
-	'H', 'o', 'l', 'a',
-	'H', 'o', 'l', 'a',
-	'H', 'o', 'l', 'a',
-	'H'
+    'H', 'o', 'l', 'a', // Datos de ejemplo
+    'H', 'o', 'l', 'a',
+    'H', 'o', 'l', 'a',
+    'H', 'o', 'l', 'a',
+    'H', 'o', 'l', 'a',
+    'H'
   };
-
   // elPublicador.laEmisora.emitirAnuncioIBeaconLibre ( &datos[0], 21 );
   elPublicador.laEmisora.emitirAnuncioIBeaconLibre ( "MolaMolaMolaMolaMolaM", 21 );
   */
-  esperar( 1000 );
 
-  elPublicador.laEmisora.detenerAnuncio();
-  
-  // 
-  // 
-  // 
-  elPuerto.escribir( "---- loop(): acaba **** " );
-  elPuerto.escribir( cont );
-  elPuerto.escribir( "\n" );
-  
-} // loop ()
-// --------------------------------------------------------------
-// --------------------------------------------------------------
-// --------------------------------------------------------------
-// --------------------------------------------------------------
+  esperar(1000);  // Espera 1000 ms antes de continuar
+
+  elPublicador.laEmisora.detenerAnuncio();  // Detiene la emisión del anuncio
+
+  elPuerto.escribir("---- loop(): acaba **** ");  // Mensaje indicando el fin del loop
+  elPuerto.escribir(cont);                        // Escribe el valor del contador en el puerto serie
+  elPuerto.escribir("\n");
+}  // fin de loop()
