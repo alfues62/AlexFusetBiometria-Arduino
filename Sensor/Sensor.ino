@@ -122,7 +122,7 @@ void loop () {
   
   elPublicador.publicarCO2( valorCO2,
 							cont,
-							2000 // intervalo de emisión
+							1000 // intervalo de emisión
 							);
   
   // 
@@ -130,10 +130,10 @@ void loop () {
   // 
   int valorTemperatura = elMedidor.medirTemperatura();
   
-  elPublicador.publicarTemperatura( valorTemperatura, 
-									cont,
-									1000 // intervalo de emisión
-									);
+  //elPublicador.publicarTemperatura( valorTemperatura, 
+	//								cont,
+	//								1000 // intervalo de emisión
+	//								);
 
   // 
   // prueba para emitir un iBeacon y poner
